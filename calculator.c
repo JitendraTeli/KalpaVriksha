@@ -30,8 +30,9 @@ int cal(int a,int b,char o) {
             return 3;
 
         } else return a / b;
-        default: "Invalid Expression \n";
-                error =2;
+        default: error =2;
+        //"Invalid Expression \n";
+                
                     return 3;
     }
 }
