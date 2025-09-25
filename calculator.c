@@ -2,10 +2,10 @@
 #include<string.h>
 
 
-
-void showops(char s[],int t) {
-    while(t >= 0) printf("%c  ",  s[t--]);
-}
+int error = 0;
+// void showops(char s[],int t) {
+//     while(t >= 0) printf("%c  ",  s[t--]);
+// }
 
 int isDigit(char a) {
     return a <= '9' && a >= '0';
@@ -24,8 +24,14 @@ int cal(int a,int b,char o) {
         case '+': return a+b;
         case '-': return a-b;
         case '*': return a*b;
-        case '/': if(b==0) {printf("Invalid Expression : cannot divide by 0 \n");return 3;} else return a / b;
+        case '/': if(b==0) {
+            //printf("Invalid Expression : cannot divide by 0 \n");
+            error = 1;
+            return 3;
+
+        } else return a / b;
         default: "Invalid Expression \n";
+                error =2;
                     return 3;
     }
 }
@@ -48,7 +54,8 @@ int explore(char s[]) {
         if(s[i] == ' ') continue;
 
         if(isAlpha(s[i])) {
-            printf("Invalid expression: must only contain integers and operators (found variable )\n");
+            //printf("Invalid expression: must only contain integers and operators (found variable )\n");
+            error = 2;
             return 3;
         }
 
@@ -69,9 +76,9 @@ int explore(char s[]) {
                 int x = num[n--];
                 int y = num[n--];
 
-                printf("\n %d %c %d = ",y,op[t],x);
+                //printf("\n %d %c %d = ",y,op[t],x);
                 num[++n] = cal(y,x,op[t--]); 
-                printf("%d",num[n]);
+                //printf("%d",num[n]);
 
             }
            
@@ -81,7 +88,7 @@ int explore(char s[]) {
         }
 
         if(s[i] == '(') {
-            printf("\n open");
+            //printf("\n open");
             t++;
             op[t] = s[i];
             continue;
@@ -89,31 +96,32 @@ int explore(char s[]) {
 
         if(s[i] == ')') {
 
-            printf("\n close");
-            printf("\n printing operators : \n");
-            showops(op,t);
+            // printf("\n close");
+            // printf("\n printing operators : \n");
+            // showops(op,t);
 
             while(t != -1 && op[t] != '(') {
                 int x = num[n--];
                 int y = num[n--];
 
-                printf("\n %d %c %d = ",y,op[t],x);
+                //printf("\n %d %c %d = ",y,op[t],x);
 
                 num[++n] = cal(y,x,op[t--]); 
 
-                printf("%d",num[n]);
+                //printf("%d",num[n]);
 
             }
-            printf("\ndone %d",t);
+            //printf("\ndone %d",t);
             //t = (t >= 0)? t - 1: -1;
             if(t != -1) t--;
 
-            printf("   %d",t);
+            //printf("   %d",t);
 
             continue;
         }
 
-        printf("invalid expression : should not contain %c",s[i]);
+        //printf("invalid expression : should not contain %c",s[i]);
+        error = 2;
         return 3;
 
     }
@@ -122,11 +130,11 @@ int explore(char s[]) {
         int x = num[n--];
         int y = num[n--];
 
-        printf("\n %d %c %d = ",y,op[t],x);
+        //printf("\n %d %c %d = ",y,op[t],x);
 
         num[++n] = cal(y,x,op[t--]);
 
-        printf("%d",num[n]);
+        //printf("%d",num[n]);
     }
 
     return num[n];
@@ -137,7 +145,7 @@ int explore(char s[]) {
 int main() {
 
     char x[100];
-    int l = 0;
+    int l = 0,ans = 0;
     
     scanf("%[^\n]",x);
 
@@ -151,7 +159,19 @@ int main() {
 
     //printf("%d", cal(x[0] - '0',x[2] - '0',x[1]));
 
-    printf("\n\n %s = %d",x,explore(x));
+    ans = explore(x);
+
+    if(error == 0) {
+        printf("%d",ans);
+    } else {
+        switch(error) {
+            case 1: printf("Error: Division by zero");
+                    break;
+            case 2: printf("Error: Invalid expression");
+                    break;
+        }
+    }
+    //printf("\n\n %s = %d",x,explore(x));
 
     return 0;
 }
