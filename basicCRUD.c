@@ -37,8 +37,11 @@ void readUsers(char *fname) {
     int id,age;
     char name[100];
 
+    printf("\nID       Name                                Age\n");
+    printf("________________________________________________\n\n");
+
     while(fscanf(p,"%d,%99[^,],%d",&id,name,&age) == 3) {
-        printf("%d\t%s\t\t%d\n",id,name,age);
+        printf("%-8d %-30s %8d\n",id,name,age);
     }
 
     fclose(p);
@@ -161,11 +164,11 @@ void meenu(char *fname) {
     do{
         c = 0;
         
-        printf("\nCreate User\t: 1\n");
-        printf("Update User\t: 2\n");
-        printf("Delete User\t: 3\n");
-        printf("Show  Users\t: 4\n");
-        printf("Exit\t : 0\n");
+        printf("\n1. Create User\n");
+        printf("2. Update User\n");
+        printf("3. Delete User\n");
+        printf("4. Show Users\n");
+        printf("0. Exit\n");
         printf("Enter operation : ");
         scanf("%d",&c);
         printf("\n");
