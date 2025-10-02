@@ -76,7 +76,10 @@ void updateUser(char *fname,int id,char *uname,int age) {
         remove(fname);
         rename("temp.txt",fname);
 
-    } else printf("id not found ");
+    } else {
+        remove("temp.txt");
+        printf("id not found ");
+    }
 
 
 
@@ -108,8 +111,10 @@ void deleteUser(char *fname,int id) {
         remove(fname);
         rename("temp.txt",fname);
 
-    } else printf("id not found ");
-
+    } else {
+        remove("temp.txt");
+        printf("id not found ");
+    }
 
 }
 void createUser(char *fname) {
