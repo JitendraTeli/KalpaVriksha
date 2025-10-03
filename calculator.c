@@ -3,164 +3,141 @@
 
 
 int error = 0;
-// void showops(char s[],int t) {
-//     while(t >= 0) printf("%c  ",  s[t--]);
-// }
 
-int isDigit(char a) {
-    return a <= '9' && a >= '0';
+
+int isDigit(char token) {
+    return token<= '9' && token>= '0';
 }
 
-int isAlpha(char a) {
-    return (a >= 'a' && a <= 'z') || (a >= 'A' && a <= 'Z');
+int isAlaphabate(char token) {
+    return (token>= 'a' && token<= 'z') || (token>= 'A' && token<= 'Z');
 }
 
-int isOp(char a) {
-    return a == '+' || a == '-' || a == '*' || a == '/' ;
+int isOperator(char token) {
+    return token== '+' || token== '-' || token== '*' || token== '/' ;
 }
 
-int cal(int a,int b,char o) {
-    switch(o) {
+int applyArithematicOperation(int a,int b,char operator) {
+    switch(operator) {
         case '+': return a+b;
         case '-': return a-b;
         case '*': return a*b;
         case '/': if(b==0) {
-            //printf("Invalid Expression : cannot divide by 0 \n");
-            error = 1;
-            return 3;
+            
+                        error = 1;
+                        return 3;
 
-        } else return a / b;
+                    } else return a/ b;
+
         default: error =2;
-        //"Invalid Expression \n";
-                
-                    return 3;
+                return 3;
     }
 }
 
-int precedence(char a) {
-    if(a == '+' || a == '-') return 1;
-    if(a == '/' || a == '*') return 2;
+int precedence(char token) {
+    if(token== '+' || token== '-') return 1;
+    if(token== '/' || token== '*') return 2;
     return 0;
 
 }
 
-int explore(char s[]) {
-    char op[100];   //for operands
-    int t=-1;
-    int num[100];     //for numbers
-    int n = -1;
+int explore(char expression[]) {
+    char operatorStack[100];   
+    int operatorTop=-1;
+    int integerStack[100];     
+    int integerTop = -1;
+    int l = strlen(expression);                      // length of String expression
     
 
-    for(int i = 0; i<strlen(s); i++) {
-        if(s[i] == ' ') continue;
+    for(int i = 0; i<l; i++) {
+        if(expression[i] == ' ') continue;
 
-        if(isAlpha(s[i])) {
-            //printf("Invalid expression: must only contain integers and operators (found variable )\n");
+        if(isAlaphabate(expression[i])) {
+            
             error = 2;
             return 3;
         }
 
-        if(isDigit(s[i])) {
-            n++;
-            num[n] = s[i] - '0';
-            while(isDigit(s[i+1])) {
+        if(isDigit(expression[i])) {
+            integerTop++;
+            integerStack[integerTop] = expression[i] - '0';
+
+            while(isDigit(expression[i+1])) {                      // for multidigit number
                 i++;
-                num[n] *= 10;
-                num[n] += s[i] - '0';
+                integerStack[integerTop] *= 10;
+                integerStack[integerTop] += expression[i] - '0';
             }
             continue;
         }
-
-        if(isOp(s[i])) {
+        
+        if(isOperator(expression[i])) {
             
-            while(t != -1 && precedence(op[t]) >= precedence(s[i])) {
-                int x = num[n--];
-                int y = num[n--];
+            while(operatorTop != -1 && precedence(operatorStack[operatorTop]) >= precedence(expression[i])) {
+                //calculate the result of higherprecedence operation ad bodmass says
+                int x = integerStack[integerTop--];
+                int y = integerStack[integerTop--];
 
-                //printf("\n %d %c %d = ",y,op[t],x);
-                num[++n] = cal(y,x,op[t--]); 
-                //printf("%d",num[n]);
-
+                integerStack[++integerTop] = applyArithematicOperation(y,x,operatorStack[operatorTop--]); 
+                
             }
            
-            op[++t] = s[i];
+            operatorStack[++operatorTop] = expression[i];
             
             continue;
         }
 
-        if(s[i] == '(') {
-            //printf("\n open");
-            t++;
-            op[t] = s[i];
+        if(expression[i] == '(') {
+            
+            operatorTop++;
+            operatorStack[operatorTop] = expression[i];
             continue;
         }
 
-        if(s[i] == ')') {
+        if(expression[i] == ')') {
 
-            // printf("\n close");
-            // printf("\n printing operators : \n");
-            // showops(op,t);
+           
+            while(operatorTop != -1 && operatorStack[operatorTop] != '(') {
+                //solve parentheses first
+                int x = integerStack[integerTop--];
+                int y = integerStack[integerTop--];
 
-            while(t != -1 && op[t] != '(') {
-                int x = num[n--];
-                int y = num[n--];
-
-                //printf("\n %d %c %d = ",y,op[t],x);
-
-                num[++n] = cal(y,x,op[t--]); 
-
-                //printf("%d",num[n]);
+                integerStack[++integerTop] = applyArithematicOperation(y,x,operatorStack[operatorTop--]); 
 
             }
-            //printf("\ndone %d",t);
-            //t = (t >= 0)? t - 1: -1;
-            if(t != -1) t--;
-
-            //printf("   %d",t);
+            
+            if(operatorTop != -1) operatorTop--;
 
             continue;
         }
 
-        //printf("invalid expression : should not contain %c",s[i]);
+        
         error = 2;
         return 3;
 
     }
 
-    while(t != -1) {
-        int x = num[n--];
-        int y = num[n--];
+    while(operatorTop != -1) {
+        int x = integerStack[integerTop--];
+        int y = integerStack[integerTop--];
 
-        //printf("\n %d %c %d = ",y,op[t],x);
-
-        num[++n] = cal(y,x,op[t--]);
-
-        //printf("%d",num[n]);
+        integerStack[++integerTop] = applyArithematicOperation(y,x,operatorStack[operatorTop--]);
+        
     }
 
-    return num[n];
+    return integerStack[integerTop];
 }
 
 
 
 int main() {
 
-    char x[100];
-    int l = 0,ans = 0;
+    char expression[100];
+    int ans = 0;
     
-    scanf("%[^\n]",x);
+    scanf("%[^\n]",expression);
 
-    l = strlen(x);
 
-    // printf("%s",x);
-
-    // printf("\n %d",l);
-
-    // printf("  %d",isDigit(x[2]));
-
-    //printf("%d", cal(x[0] - '0',x[2] - '0',x[1]));
-
-    ans = explore(x);
+    ans = explore(expression);
 
     if(error == 0) {
         printf("%d",ans);
@@ -172,7 +149,6 @@ int main() {
                     break;
         }
     }
-    //printf("\n\n %s = %d",x,explore(x));
-
+    
     return 0;
 }
