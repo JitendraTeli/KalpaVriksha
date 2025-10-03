@@ -1,25 +1,25 @@
 #include<stdio.h>
 #include<string.h>
 
-void addUser(char *fname,int id, char *uname,int age) {
-    FILE *p = fopen(fname,"a");
+void addUser(char *fileName,int id, char *userName,int age) {
+    FILE *p = fopen(fileName,"a");                            
 
     if(p == NULL) {
         printf("Internal Server Error");
     }
 
-    fprintf(p,"%d,%s,%d\n",id,uname,age);
+    fprintf(p,"%d,%s,%d\n",id,userName,age);
     fclose(p);
 
 }
 
-int getID(char *fname) {
-    FILE *p = fopen(fname, "r");
+int getIDForNewUser(char *fileName) {                          
+    FILE *p = fopen(fileName, "r");
     if(p == NULL) return 2000;
-    int id =  2000,tid = 2000,temp = 0;
-    char tn[100];
+    int id =  2000,tid = 2000,tage = 0;
+    char tname[100];                                      
 
-    while(fscanf(p,"%d,%99[^,],%d",&tid,tn,&temp) == 3) {
+    while(fscanf(p,"%d,%99[^,],%d",&tid,tname,&tage) == 3) {
         if(id < tid) id = tid;
     }
 
@@ -28,8 +28,8 @@ int getID(char *fname) {
     
 }
 
-void readUsers(char *fname) {
-    FILE *p = fopen(fname,"r");
+void readUsers(char *fileName) {
+    FILE *p = fopen(fileName,"r");
 
     if(p == NULL) printf("Internal Server Error");
     
@@ -47,8 +47,8 @@ void readUsers(char *fname) {
     fclose(p);
 }
 
-void updateUser(char *fname,int id,char *uname,int age) {
-    FILE *p = fopen(fname,"r");
+void updateUser(char *fileName,int id,char *userName,int age) {
+    FILE *p = fopen(fileName,"r");
 
     if(p == NULL) printf("Internal Server Error");
 
@@ -64,7 +64,7 @@ void updateUser(char *fname,int id,char *uname,int age) {
     while(fscanf(p,"%d,%99[^,],%d",&tid,tname,&tage) == 3) {
 
         if(id == tid) {
-            fprintf(t,"%d,%s,%d\n",id,uname,age);
+            fprintf(t,"%d,%s,%d\n",id,userName,age);
             found = 1;
         }else fprintf(t,"%d,%s,%d\n",tid,tname,tage);
     }
@@ -73,8 +73,8 @@ void updateUser(char *fname,int id,char *uname,int age) {
     fclose(t);
     
     if(found == 1) {
-        remove(fname);
-        rename("temp.txt",fname);
+        remove(fileName);
+        rename("temp.txt",fileName);
 
     } else {
         remove("temp.txt");
@@ -85,8 +85,8 @@ void updateUser(char *fname,int id,char *uname,int age) {
 
 }
 
-void deleteUser(char *fname,int id) {
-    FILE *p = fopen(fname,"r");
+void deleteUser(char *fileName,int id) {
+    FILE *p = fopen(fileName,"r");
 
     if(p == NULL) printf("Internal Server Error");
     
@@ -108,8 +108,8 @@ void deleteUser(char *fname,int id) {
     fclose(t);
     
     if(found == 1) {
-        remove(fname);
-        rename("temp.txt",fname);
+        remove(fileName);
+        rename("temp.txt",fileName);
 
     } else {
         remove("temp.txt");
@@ -117,54 +117,46 @@ void deleteUser(char *fname,int id) {
     }
 
 }
-void createUser(char *fname) {
+void createUser(char *fileName) {
     
     int tage;
     char tname[100];
 
- 
-
-    // printf("provide details of user eg(Vinit Soni:56) name:age - ");
-    // scanf("%99[^:]:%d",tname,tage);
-
     printf("Enter user name : ");
-    scanf(" %99[^\n]",tname); //fgets(tname,100,stdin);  //scanf("%99[^\n]\n",tname);
+    scanf(" %99[^\n]",tname); 
     printf("Enter user age  : ");
     scanf("%d",&tage);
 
-    //printf("\n you entered %s %d",tname,tage);
-
-
-    addUser(fname,getID(fname),tname,tage);
+    addUser(fileName,getIDForNewUser(fileName),tname,tage);
 
 }
 
 
-void editUser(char *fname) {
+void editUser(char *fileName) {
     int id,age;
     char name[100];
 
     printf("Enter user ID   : ");
     scanf("%d",&id);
     printf("Enter user name : ");
-    scanf(" %99[^\n]",name);  //fgets(name,100,stdin);     //scanf("%99[^\n]\n",name);
+    scanf(" %99[^\n]",name);  
     printf("Enter user age  : ");
     scanf("%d",&age);
 
-    updateUser(fname,id,name,age);
+    updateUser(fileName,id,name,age);
 
 }
 
-void removeUser(char *fname) {
+void removeUser(char *fileName) {
     int id;
 
     printf("Enter user ID   : ");
     scanf("%d",&id);
 
-    deleteUser(fname,id);
+    deleteUser(fileName,id);
 }
 
-void meenu(char *fname) {
+void meenu(char *fileName) {
     int c = 0;
     do{
         c = 0;
@@ -181,13 +173,13 @@ void meenu(char *fname) {
         switch(c) {
             case 0: printf("\nClosing the app, adios amigo");
             break;
-            case 1:createUser(fname);
+            case 1:createUser(fileName);
             break;
-            case 2:editUser(fname);
+            case 2:editUser(fileName);
             break;
-            case 3:removeUser(fname);
+            case 3:removeUser(fileName);
             break;
-            case 4:readUsers(fname);
+            case 4:readUsers(fileName);
             break;
             default: printf("Invalid option");
         }
@@ -198,34 +190,9 @@ void meenu(char *fname) {
 
 int main() {
     
-    char *fname = "users.txt";
+    char *fileName = "users.txt";
 
-    meenu(fname);
-
-
-    //--------Testing code commented ---------//
-
-    // createUser();
-    // createUser();
-
-    // addUser(fname,getID(fname),"Ramesh Bhattacharya",34);
-    // addUser(fname,getID(fname),"Lakshyadeep Singh",29);
-    // addUser(fname,getID(fname),"Veena Shriwastav",67);
-    // addUser(fname,getID(fname),"Veena Shriwastav",67);
-    // addUser(fname,getID(fname),"Rahim Purohit",44);
-    // addUser(fname,getID(fname),"Baal Gangadhar Tilak",134);
-    // addUser(fname,getID(fname),"Vinit Acharya",37);
-
-    //readUsers(fname);
-
-    // updateUser(fname,2003,"Vidhya shri",23);
-    // deleteUser(fname,2005);
-
-    // printf("\n ------ \n\n");
-
-    // readUsers(fname);
-    
-
+    meenu(fileName);
 
     return 0;
 
