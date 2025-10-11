@@ -100,7 +100,7 @@ void printStudentList(Node *head) {
         printf("Roll: %d\n",current->data.rollNumber);
         printf("Name: %s\n",current->data.name);
         printf("Total: %d\n",current->data.totalMarks);
-        printf("Average: %f\n",current->data.averageMarks);
+        printf("Average: %.2f\n",current->data.averageMarks);
         printf("Grade: %c\n",current->data.grade);
         
         switch(current->data.grade) {
