@@ -29,7 +29,7 @@ char assignGrade(int averageMarks) {
 
 Node* addStudent(int rollNumber, char *name, int *marks) {
 
-    struct node *newNode = (struct node*)malloc(sizeof(struct node));            //dynamic memeory allocation for new user
+    struct node *newNode = (struct node*)malloc(sizeof(struct node));            //dynamic memeory allocation for a new user
     newNode->next = NULL;
 
     newNode->data.rollNumber = rollNumber;
@@ -56,10 +56,13 @@ Node* inputStudent() {
 
     fgets(inputBuffer,99,stdin);
 
-    sscanf(inputBuffer,"%d %49s %d %d %d",&rollNumber,name,&marks[0],&marks[1],&marks[2]);
+    if(sscanf(inputBuffer,"%d %49s %d %d %d",&rollNumber,name,&marks[0],&marks[1],&marks[2]) == 5) {
+        
+        return addStudent(rollNumber,name,marks);
+    } else {
+        return NULL;
+    }
 
-
-    return addStudent(rollNumber,name,marks);
 }
 
 Node* insertNode(Node *head,Node *newNode) {
@@ -89,6 +92,29 @@ Node* startInput(Node *head) {
     return head;
 }
 
+void printStudentData(Student data) {
+
+    printf("Roll: %d\n",data.rollNumber);
+    printf("Name: %s\n",data.name);
+    printf("Total: %d\n",data.totalMarks);
+    printf("Average: %.2f\n",data.averageMarks);
+    printf("Grade: %c\n",data.grade);
+    
+    switch(data.grade) {
+        case 'A':printf("Performance: *****");
+                break;
+        case 'B':printf("Performance: ****");
+                break;
+        case 'C':printf("Performance: ***");
+                break;
+        case 'D':printf("Performance: **");
+                break;
+        default: 
+    }
+
+    printf("\n\n");
+}
+
 void printStudentList(Node *head) {
     printf("\n\n");
     if(head == NULL) {
@@ -97,25 +123,9 @@ void printStudentList(Node *head) {
     }
     Node *current = head;
     while(current != NULL) {         //loop will run till no student is left
-        printf("Roll: %d\n",current->data.rollNumber);
-        printf("Name: %s\n",current->data.name);
-        printf("Total: %d\n",current->data.totalMarks);
-        printf("Average: %.2f\n",current->data.averageMarks);
-        printf("Grade: %c\n",current->data.grade);
-        
-        switch(current->data.grade) {
-            case 'A':printf("Performance: *****");
-                    break;
-            case 'B':printf("Performance: ****");
-                    break;
-            case 'C':printf("Performance: ***");
-                    break;
-            case 'D':printf("Performance: **");
-                    break;
-            default: 
-        }
 
-        printf("\n\n");
+        printStudentData(current->data);
+    
         current = current->next;
     }
 }
@@ -126,6 +136,7 @@ void printRollNumbersUsingRecursion(Node *head) {
     }
 
     printf("%d  ",head->data.rollNumber);
+
     return printRollNumbersUsingRecursion(head->next);
     
 }
