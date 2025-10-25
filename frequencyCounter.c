@@ -41,7 +41,6 @@ int* inputArray(int size) {
 
 int main() {
     int *array = NULL,size,secondBottom,secondTop;
-    int error = 0;
 
     printf("\n Enter the Total Number of Element : ");
     scanf("%d",&size);
