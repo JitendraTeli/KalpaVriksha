@@ -46,11 +46,6 @@ int main() {
     printf("\n Enter the Total Number of Element : ");
     scanf("%d",&size);
 
-    if(size < 2) {
-        printf("\nthere is no 2nd smallest or 2nd largest element in this array");
-        return 0;
-    }
-
     array = inputArray(size);
 
     countFrequencies(array,size);
