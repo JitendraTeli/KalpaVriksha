@@ -64,6 +64,8 @@ void updateQuantity() {
             productList[i].quantity = newQuantity;
         }
     }
+
+    printf("\n");
 }
 
 void searchProductById() {
@@ -92,7 +94,7 @@ void searchProductByName() {
     
     printf("\n\nEnter name to search (partial allowed): ");
     scanf("%s",name);
-
+    printf("\nProducts Found");
     for(int i = 0; i<totalProducts; i++) {
         if(matchNames(i,name)) printDetails(i);
     }
@@ -114,6 +116,12 @@ void searchProductByPriceRange() {
 
 }
 
+void shiftElementsByOne(int start,int end) {
+    for(int i = start; i<end; i++) {
+        productList[i] = productList[i+1];
+    }
+}
+
 void deleteProductById() {
     int id;
 
@@ -122,14 +130,12 @@ void deleteProductById() {
 
     for(int i = 0; i < totalProducts; i++) {
         if(productList[i].product_id == id) {
-
-
-            printf("L");
+            shiftElementsByOne(i,--totalProducts);
             break;
         }
     }
 
-    printf("\nProduct deleted successfully! ");
+    printf("\nProduct deleted successfully! \n\n");
 }
 
 
@@ -143,7 +149,7 @@ void displayMenu() {
     printf("6. Search Product by Price Range\n");
     printf("7. Delete Product\n");
     printf("8. Exit\n");
-    printf("Enter Your Choice : ");
+    printf("\nEnter Your Choice : ");
 }
 
 void Start() {
