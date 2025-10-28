@@ -21,9 +21,13 @@ Product *productList;
 
 void addProduct() {
 
-    productList = (Product *) realloc(productList,++totalProducts * sizeof(Product));
+    Product *temprory = (Product *) realloc(productList,++totalProducts * sizeof(Product));
 
-    
+    if(temprory == NULL) {
+        printf("\nMemory allocation failed, cannot add new product");
+        return;
+    } else productList = temprory;
+
     printf("\n\nEnter Details for new Product :\n");
     printf("Product ID: ");
     scanf("%d",&productList[totalProducts-1].product_id);
@@ -41,7 +45,7 @@ void addProduct() {
 }
 
 void printDetails(int index) {
-    printf("\nProduct ID: %d | Name: %s | Price: %f | Quantinty: %d\n",productList[index].product_id,productList[index].name,productList[index].price,productList[index].quantity);
+    printf("\nProduct ID: %d | Name: %s | Price: %f | Quantity: %d\n",productList[index].product_id,productList[index].name,productList[index].price,productList[index].quantity);
 }
 
 void showProducts() {
@@ -84,6 +88,7 @@ int matchNames(int index,char name[NameLength]) {
     int i = 0;
     while(productList[index].name[i] != '\0' && name[i] != '\0') {
         if(productList[index].name[i] != name[i]) return False;
+        i++;
     }
 
     if(name[i] == '\0') return True; else return False;
@@ -101,13 +106,13 @@ void searchProductByName() {
 }
 
 void searchProductByPriceRange() {
-    int minPrice = 0,maxPrice = 0;
+    float minPrice = 0.0,maxPrice = 0.0;
 
     printf("\nEnter minimum price: ");
-    scanf("%d",&minPrice);
+    scanf("%f",&minPrice);
 
     printf("Enter maximum price: ");
-    scanf("%d",&maxPrice);
+    scanf("%f",&maxPrice);
 
     printf("\n\nProducts in Range - \n");
     for(int i = 0; i<totalProducts;i++) 
@@ -188,8 +193,13 @@ int main() {
 
     productList = (Product *) malloc(totalProducts * sizeof(Product));
 
+    if(productList == NULL) {
+        printf("\n Initial memory allocation failed, Closing the program ");
+        return 0;
+    }
+
     for(int i = 0; i<totalProducts; i++) {
-        printf("\n Enter Details for Product %d\n\n",i+1);
+        printf("\nEnter Details for Product %d\n\n",i+1);
 
         printf("Product ID: ");
         scanf("%d",&productList[i].product_id);
@@ -205,6 +215,8 @@ int main() {
     }
 
     Start();
+
+    free(productList);
 
     return 0;
 }
