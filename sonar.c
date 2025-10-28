@@ -2,24 +2,12 @@
 #include<stdlib.h>
 #include<time.h>
 
+#define True 1
 
-/*
-caution: in this implementation of Sonar Image processing the memory block assigned to one single Image is continous single block of size N x N 
-since normal matrix indexing like Matrix[i][j] doesn't work on dynamically allocated continuous block
-and also due to the requirement of using pointer arithematic for this Assignment
-only pointer Arithematic is used throuout the implementation
-
-though int *matrix is an array of size N x N , it is treated as a matrix using pointer Arithematics 
-
-where matrix[i][j]  = *(matrix  +  i * N + j);
-
-*/
-
-
-void swap(int *a, int *b) {
-    *a += *b;
-    *b = *a - *b;
-    *a -= *b;
+void swap(int *pointer1, int *pointer2) {
+    *pointer1 += *pointer2;
+    *pointer2 = *pointer1 - *pointer2;
+    *pointer1 -= *pointer2;
 }
 
 void reverseArray(int *array,int size) {
@@ -31,15 +19,10 @@ void reverseArray(int *array,int size) {
 void transposeMatrix(int *matrix, int size) { 
     for(int row = 0; row < size; row++) {
         for(int column = row + 1; column < size; column++) {
-            swap(matrix + row * size + column , matrix + column * size + row);          //replacing matrix[i][j] with matrix[j][i];
+            swap(matrix + row * size + column , matrix + column * size + row);          
         }
     }
 }
-//            current Issue
-//Issue 1: though it was mentioned in the task that the rotation shold only be done with swapping addresses and not by swapping values but that is not possible since we got only one single pointer
-// if I were to create the matrix as array of pointer to arrays of int it would cause it to addition memory to store N pointers which is quite not withing the constraints and also swapping addresses in pointer array would result in swapping rows and not the swaaping of rows with column which is required in the 90 degree clockwise rotation of matrix
-// therefore I have used pointer arithmatics to address the task of rotating the array
-
 
 void rotateMatrix(int *matrix,int size) {
 
@@ -56,108 +39,59 @@ void printMatrix(int *matrix,int size) {
     printf("\n");
     for(int row = 0; row < size; row++) {
         for(int column = 0; column < size; column++) {
-            printf(" %5d ", *(matrix + row * size + column));     // printing matrix with pointer Arithematics
+            printf("%5d", *(matrix + row * size + column));     // printing matrix with pointer Arithematics
         }
         printf("\n");
     }
 }
 
+void applySmootheningFilterOnMatrix(int *matrix,int size) {       
 
-//unfinished function 
-
-
-//Issue 2: 
-//by using a singl block of memory for matrix the and only able to use pointer arithematics to access the values in matrix manner below code becomes much more complex from which it already is
-// if it is not acceptable, I'll have to move to the other implementation which uses matrix as array of pointer to arrays
-//
-
-void applySmootheningFilterOnMatrix(int *matrix,int size) {       //using pointer arithematics instead of indexing
-
-    int previousRow[size];
+    int *previousRow = (int *)calloc(size,sizeof(int));
     int previousValue = 0;
     int currentValue = 0;
     for(int row = 0; row < size; row++) {
         for(int column = 0; column < size; column++) {
             currentValue = *(matrix + row * size + column);
-            if(row == 0)                                              //top row
-            {
 
-                //update in previous row at top row
-                previousRow[column] = *(matrix + row * size + column);  //matrix[row][column];
+            int sum = 0;
+            int count = 0;
 
-                if(column == 0)       //Top-Left Corner
-                {
-                    *(matrix + row * size + column) += *(matrix + row * size + column + 1) + *(matrix + (row + 1)*size + column) + *(matrix + (row + 1)*size + column+1);
-                    *(matrix + row * size + column) /= 4;
-
-                    // this can be understood as arr[i][j] = (arr[i][j] + arr[i][j+1] + arr[i+1][j] + arr[i+1][j+1])/4
-
+            for(int adjacentRow = -1; adjacentRow <= 1; adjacentRow++) {
+                for(int adjacentColumn = -1; adjacentColumn <= 1; adjacentColumn++) {
                     
-                }
-                else if(column == size - 1)  
-                {
-                    *(matrix + row * size + column) += previousValue + *(matrix + (row + 1)*size + column) + *(matrix + (row + 1)*size + column-1);
-                    *(matrix + row * size + column) /= 4;
-                }
-                else {
-                    //ie  matrix[i][j]              =     matrix[i][j-1] +       matrix[i+1][j-1]                +    matrix[i+1][j]                    +       matrix[i][j+1]               +         matrix[i+1][j+1]
-                    *(matrix + row * size + column) +=  previousValue + *(matrix + (row + 1)*size + column-1) +  *(matrix + (row + 1)*size + column) + *(matrix + row * size + column + 1) + *(matrix + (row + 1)*size + column+1);
-                    *(matrix + row * size + column) /= 6;
-                }
-            } 
-            else if(row == size - 1)                                  //bottom row
-            {
-                if(column == 0)       
-                {
-                    *(matrix + row * size + column) += previousRow[column] + previousRow[column + 1] + *(matrix + row * size + column + 1) ;
-                    *(matrix + row * size + column) /= 4;
-                }
-                else if(column == size - 1)  
-                {
-                    *(matrix + row * size + column) +=previousValue +  previousRow[column - 1] + previousRow[column];
-                    *(matrix + row * size + column) /= 4;
-                }
-                else {
-                    *(matrix + row * size + column) += previousValue +  previousRow[column - 1] + previousRow[column] + previousRow[column + 1] +  *(matrix + row * size + column + 1);
-                    *(matrix + row * size + column) /= 6;
-                }
-            }
-            else                                                      //middle rows
-            {
-                if(column == 0)       
-                {
-                    *(matrix + row * size + column) += previousRow[column] + previousRow[column + 1] + *(matrix + row * size + column + 1) + *(matrix + (row + 1) * size + column) + *(matrix + (row + 1) * size + column+1);
-                    *(matrix + row * size + column) /= 6;
+                    if(row + adjacentRow >= 0 && row + adjacentRow < size && column + adjacentColumn >= 0 && column + adjacentColumn < size) {
 
-                }   
-                else if(column == size - 1)  
-                {
-                    *(matrix + row * size + column) += previousValue + previousRow[column - 1] + previousRow[column] + *(matrix + (row + 1) * size + column - 1) + *(matrix + (row + 1) * size + column);
-                    *(matrix + row * size + column) /=6;
-                    
-
-                    //updation in previous row
-                    previousRow[column - 1] = previousValue;
-                    previousRow[column] = currentValue;
-
-                }
-                else {
-                    // this lines boils down to  arr[i][j] = (arr[i][j] + arr[i][j-1] + arr[i][j+1] + arr[i-1][j-1] + arr[i-1][j] + arr[i-1][j+1] + arr[i+1][j-1] + arr[i+1][j] + arr[i+1][j+1] ) /9 ;
-
-                    *(matrix + row * size + column) += previousValue +  previousRow[column - 1] + previousRow[column] + previousRow[column + 1] +  *(matrix + row * size + column+1) +  *(matrix + (row + 1) * size + column - 1) + *(matrix + (row + 1) * size + column) + *(matrix + (row + 1) * size + column+1);
-                    *(matrix + row * size + column) /= 9;
-
-                    //updation in previous Row 
-                    previousRow[column - 1] = previousValue;
+                        if(adjacentRow == -1) {
+                            sum += previousRow[column + adjacentColumn];
+                        } else if( adjacentRow == 0 &&adjacentColumn == -1) {
+                            sum += previousValue;
+                        } else {
+                            sum += *(matrix + ((row + adjacentRow)*size) + (column + adjacentColumn));
+                        }
+                        count++;
+                    }
                 }
             }
 
+            if(column > 0) {
+                previousRow[column - 1] = previousValue;
+            }
+
+            if(column == size - 1) {
+                previousRow[column] = currentValue;
+            }
+
+            *(matrix + row * size + column) = sum/count;
+            
             previousValue = currentValue;
         }
     }
+
+    free(previousRow);
 }
 
-int* generateMatrixWithRandomValues(int size) {       // this function allocates continuous block of memory of size of N x N for integers
+int* generateMatrixWithRandomValues(int size) {      
 
     int *matrix = (int *)malloc(size * size * sizeof(int));       //dynamic memory allocation for matrix N x N
 
@@ -177,9 +111,14 @@ int main()  {
     int *matrix = NULL;
     srand(time(NULL));                        //passing current time as seed for random numbers
 
-    printf("Enter size of the image: ");
-    scanf("%d",&size);
+    while(True) {
+        
+        printf("Enter size of the image: ");
+        scanf("%d",&size);
 
+        if(size < 2 || size > 10) printf("\nInvalid size please try again\n");
+        else break;
+    }
 
     matrix = generateMatrixWithRandomValues(size);
 
@@ -195,6 +134,8 @@ int main()  {
 
     printf("\n\n Matrix after applying 3x3 Smoothening Filter :- \n");
     printMatrix(matrix,size);
+
+    free(matrix);
 
     return 0;
 }
