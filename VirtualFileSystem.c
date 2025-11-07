@@ -4,7 +4,7 @@
 
 #define NAME_LENGTH 51
 #define BLOCK_SIZE 8
-#define TOTAL_BLOCKS 500
+#define TOTAL_BLOCKS 5000
 
 #define True 1
 #define False 0
@@ -169,6 +169,8 @@ void insertChild(char *name,char type) {
 
     strcpy(newNode->name,name);
     newNode->type = type;
+    newNode->index = -1;
+    newNode->totalBlocks = 0;
 
     if(cwd == NULL) { //case : root
         cwd = newNode;
@@ -203,6 +205,7 @@ void removeChild(FileNode *badChild) {
 void clearFile(FileNode *temp) {
     for(int i = 0; i < temp->totalBlocks; i++) {
         appendFreeBlock(temp->index + i);
+        allocations--;
     }
 }
 
@@ -259,8 +262,6 @@ void writeFile(char *name,char *string) {
 
                     Memory[i][j] = string[index];
 
-                    printf("%c ",Memory[i][j]);
-
                     if(string[index] == '\0') return;
                     index++;
                 }   
@@ -282,7 +283,7 @@ void readFile(char *name) {
             return;
         }
 
-        printf("\n --- \n %s",Memory[file->index]);
+        printf("\n%s",Memory[file->index]);
     }
 }
 
@@ -334,45 +335,90 @@ void presentWorkingDirectory() {
     CurrentWorkingDirectory(cwd);
 }
 
+void clearInput() {
+    int something;
+    while((something = getchar()) != '\n' && something != EOF);
+}
+
+char* getName() {
+    char *name = (char *) malloc(NAME_LENGTH + 10 * sizeof(char));
+
+    scanf("%60s",name);
+    
+    if(strlen(name) > 50 ) {
+        printf("error : name length cannot exceed 50");
+        clearInput();
+        free(name);
+        return NULL;
+    }
+
+    return name;
+}
+
 void moveDirectory() {
-    char directory[NAME_LENGTH];
+    char *directory = getName();
 
-    scanf("%s",directory);
-
-    changeDirectory(directory);
+    if(directory != NULL) {
+        changeDirectory(directory);
+        free(directory);
+    }
 }
 
 void makeDirectory() {
-    char directory[NAME_LENGTH];
+    char *directory = getName();
 
-    scanf("%s",directory);
-
-    insertChild(directory,'d');
+    if(directory != NULL) {
+        insertChild(directory,'d');
+        free(directory);
+    }
 }
 
 void deleteDirectory() {
-    char directory[NAME_LENGTH];
+    char *directory = getName();
 
-    scanf("%s",directory);
-
-    removeDirectory(directory);
+    if(directory != NULL) {
+        removeDirectory(directory);
+        free(directory);
+    } 
 }
 
 void createFile() {
-    char name[NAME_LENGTH];
+    char *name = getName();
 
-    scanf("%s",name);
-
-    insertChild(name,'f');
-
-}
+    if(name != NULL) {
+        insertChild(name,'f');
+        free(name);
+    }
+} 
 
 void deleteFile() {
-    char name[NAME_LENGTH];
+    char *name = getName();
 
-    scanf("%s",name);
+    if(name != NULL)  {
+        removeFile(name);
+        free(name);
+    }
+}
 
-    removeFile(name);
+void writeInFile() {
+    char *name = getName();
+
+    if(name != NULL) {
+        char string[512];
+        fgets(string,511,stdin);
+
+        writeFile(name,string);
+        free(name);
+    }
+}
+
+void readFromFile() {
+    char *name = getName();
+    
+    if(name != NULL) {
+        readFile(name);
+        free(name);
+    }
 }
 
 void diskInfo() {
@@ -382,38 +428,20 @@ void diskInfo() {
     printf("\nDisk Usage: %.2f%c",(float)(((float)allocations/(float)TOTAL_BLOCKS)*100),'%');
 }
 
-void writeInFile() {
-    char name[NAME_LENGTH];
-    char string[512];
-
-    scanf("%s",name);
-    fgets(string,511,stdin);
-
-    writeFile(name,string);
-}
-
-void readFromFile() {
-    char name[NAME_LENGTH];
-
-    scanf("%s",name);
-
-    readFile(name);
-}
 void execute(char *command) {
     if(strcmp(command,"ls") == 0) listDirectory();
-    else if(strcmp(command,"pwd")== 0) presentWorkingDirectory();
-    else if(strcmp(command,"cd")==0) moveDirectory();
-    else if(strcmp(command,"mkdir")==0) makeDirectory();
-    else if(strcmp(command,"rmdir")==0) deleteDirectory();
-    else if(strcmp(command,"create")==0) createFile();
-    else if(strcmp(command,"delete")==0) deleteFile();
-    else if(strcmp(command,"df")==0) diskInfo();
+    else if(strcmp(command,"pwd") == 0) presentWorkingDirectory();
+    else if(strcmp(command,"cd") == 0) moveDirectory();
+    else if(strcmp(command,"mkdir") == 0) makeDirectory();
+    else if(strcmp(command,"rmdir") == 0) deleteDirectory();
+    else if(strcmp(command,"create") == 0) createFile();
+    else if(strcmp(command,"delete") == 0) deleteFile();
+    else if(strcmp(command,"df") == 0) diskInfo();
     else if(strcmp(command,"write") == 0) writeInFile();
     else if(strcmp(command,"read") == 0) readFromFile();
     else printf("%s is not a valid command",command);
 }
 
-//used magic numbers here , need appropriate update and better logic
 void getInput() {
     while(True) {
         char command[20];
@@ -421,7 +449,8 @@ void getInput() {
         scanf("%s",command);
 
         if(strlen(command) > 9) {
-            while(getchar() != '\n');
+            printf("\n%s is not a valid command");
+            clearInput();
         } else if(strcmp(command,"exit") == 0) {
             return;
         } else {
