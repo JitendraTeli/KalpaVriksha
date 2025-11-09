@@ -4,7 +4,7 @@
 
 #define NAME_LENGTH 51
 #define BLOCK_SIZE 8
-#define TOTAL_BLOCKS 5000
+#define TOTAL_BLOCKS 500
 
 #define True 1
 #define False 0
@@ -18,13 +18,16 @@ typedef struct FreeNode {
 typedef struct FileNode {
     char type;
     char name[NAME_LENGTH];
-    int index;
-    int totalBlocks;
     
     struct FileNode *next;
     struct FileNode *previous;
-    struct FileNode *child;
     struct FileNode *parent;
+
+    union {
+        struct FileNode *child;
+        struct FreeNode *block;
+    };
+
 } FileNode;
 
 char Memory[TOTAL_BLOCKS][BLOCK_SIZE];        //virtual Memory
@@ -32,68 +35,90 @@ int allocations = 0;
 
 FreeNode *start = NULL;
 
-void appendFreeBlock(int index) {
-    FreeNode *newNode = (FreeNode *) malloc(sizeof(FreeNode));
-    newNode->index = index;
-    
+int countBlocks(FreeNode* block) {
+    FreeNode *traverser = block;
+    int count = 0;
+
+    do {
+        count++;
+        traverser = traverser->next;
+    } while(traverser != block);
+
+    return count;
+}
+
+void appendFreeBlocks(FreeNode* newNode) {
+
     if(start == NULL) {
         start = newNode;
-        start->next = newNode;
-        start->previous = newNode;
         return;
     }
-    
-    newNode->previous = start->previous;
-    newNode->next = start;
-    
+
     start->previous->next = newNode;
-    start->previous = newNode;
+    newNode->previous->next = start;
+    
+    FreeNode *temp = newNode->previous;
+    newNode->previous = start->previous;
+   
+    start->previous = temp;
+    
 }
 
-void removeFreeBlock() {
+FreeNode* allocateFreeBlocks(int count) {
+    if(count > (TOTAL_BLOCKS - allocations)) return NULL;
+
     if(start == NULL) {
-        return;
+        return NULL;
     }
-    allocations++;
-    if(start->next == start) {
-        free(start);
-        start = NULL;
-        return;
+    
+    allocations += count;
+    FreeNode *freeBlock = start;
+    
+    while(count-- > 0)  {
+        if(start->next == freeBlock) {
+            start = NULL;
+            return freeBlock;
+        } 
+
+        start = start->next;
     }
-    FreeNode *temp = start;
     
-    start->previous->next = start->next;
-    start->next->previous = start->previous;
+    freeBlock->previous->next = start;
+    start->previous->next = freeBlock;
     
-    start = start->next;
+    FreeNode *temp = freeBlock->previous;
     
-    free(temp);
+    freeBlock->previous = start->previous;
+    start->previous = temp;
+    
+    return freeBlock;
 }
 
-int allocateFreeBlocks(int count) {
-    if(count > TOTAL_BLOCKS - allocations) return -1;
+void destroyBlock(FreeNode *current) {
+    if(current->next != start) {
+        destroyBlock(current->next);
+    }
 
-    int index = start->index;
-
-    while(count-- > 0) removeFreeBlock();
-
-    return index;
+    free(current);
 }
 
-void printFreeNodes() {
-    FreeNode *temp = start;
-    printf("\n");
-    while(temp->next != start) {
-        printf("%d -- ",temp->index);
-        temp = temp->next;
-    }
+void destroyMemory() {
+    destroyBlock(start);
+    start = NULL;
 }
 
 void initializeFreeBlocks() {
     for(int i = 0; i < TOTAL_BLOCKS; i++) {
-        appendFreeBlock(i);
+        FreeNode *newNode = (FreeNode *) malloc(sizeof(FreeNode));
+        newNode->index = i;
+        newNode->next = newNode;
+        newNode->previous = newNode;
+        appendFreeBlocks(newNode);
     }
+
 }
+
+
 
 // Doubly Circular List file System
 
@@ -119,42 +144,42 @@ FileNode* appendFileNode(FileNode *root,FileNode* newNode) {  //placing of newNo
     return root;
 }
 FileNode* findNode(char *name) {
-
+    
     if(cwd->child == cwd) {
         return NULL;
     }
-
+    
     FileNode *temp = cwd->child;
-
+    
     while(temp->next != cwd->child) {
         if(strcmp(temp->name,name) == 0) return temp;
         temp = temp->next;
     }
-
+    
     if(strcmp(temp->name,name) == 0) return temp;
-
+    
     return cwd;
 }
 
 FileNode* getFileNode(char *name) {
-
+    
     FileNode *foundNode = findNode(name);
-
+    
     if(foundNode == NULL) {
         printf("\nDirectory is empty");
         return cwd;
     }
-
+    
     if(foundNode == cwd) {
         printf("\n%s not found",name);
         return cwd;
     }
-
+    
     return foundNode;
 }
 
 void insertChild(char *name,char type) {
-
+    
     if(cwd != NULL) {
         if(cwd->child != cwd) {
             if(findNode(name) != cwd) {
@@ -163,36 +188,34 @@ void insertChild(char *name,char type) {
             }
         }
     }
-
+    
     FileNode *newNode = (FileNode *)malloc(sizeof(FileNode));
     
-
+    
     strcpy(newNode->name,name);
     newNode->type = type;
-    newNode->index = -1;
-    newNode->totalBlocks = 0;
-
+    
     if(cwd == NULL) { //case : root
         cwd = newNode;
+        newNode->next = newNode;
+        newNode->previous = newNode;
     } else cwd->child = appendFileNode(cwd->child,newNode);
     
-
+    
     newNode->parent = cwd;
-    newNode->child = newNode;
+    if(type == 'd') newNode->child = newNode;
+    else newNode->block = NULL;
 }
 
 
 
 FileNode* removeFileNode(FileNode *root,FileNode *temp) {
     if(temp == root) {
-        free(temp);
         return cwd;
     }
     temp->previous->next = temp->next;
     temp->next->previous = temp->previous;
-
-    free(temp);
-
+    
     return root;
 }
 
@@ -200,12 +223,15 @@ FileNode* removeFileNode(FileNode *root,FileNode *temp) {
 
 void removeChild(FileNode *badChild) {
     cwd->child = removeFileNode(cwd->child,badChild);
+    free(badChild);
 }
 
-void clearFile(FileNode *temp) {
-    for(int i = 0; i < temp->totalBlocks; i++) {
-        appendFreeBlock(temp->index + i);
-        allocations--;
+void clearFile(FileNode *file) {
+    if(file->block != NULL) {
+        allocations -= countBlocks(file->block);
+    
+        appendFreeBlocks(file->block);
+        file->block = NULL;
     }
 }
 
@@ -238,6 +264,32 @@ void removeDirectory(char *name) {
     }
 }
 
+char *writeBlock(char *string,FreeNode *block) {
+
+    if(block != NULL) 
+    for(int i = 0; i<BLOCK_SIZE; i++) {
+        Memory[block->index][i] = *string;
+        
+        if(*string == '\0') break;
+        string++;
+    }
+
+    return string;
+}
+
+void putData(char *string,FreeNode *block) {
+    if(block == NULL) {
+        printf("error : not enough memory write operation failed");
+        return;
+    }
+
+    FreeNode *temp = block;
+    do{
+        string = writeBlock(string,temp);
+        temp = temp->next;
+    } while(temp != block);
+} 
+
 void writeFile(char *name,char *string) {
     FileNode *file = getFileNode(name);
 
@@ -251,26 +303,29 @@ void writeFile(char *name,char *string) {
         clearFile(file);
         int length = strlen(string);
 
-        file->totalBlocks = length/BLOCK_SIZE;
+        file->block = allocateFreeBlocks(length/BLOCK_SIZE + (length%BLOCK_SIZE != 0));
 
-        file->index = allocateFreeBlocks(file->totalBlocks);
-
-        if(file->index != -1) {
-            int index = 0;
-            for(int i = file->index;i<TOTAL_BLOCKS; i++) {
-                for(int j = 0; j<BLOCK_SIZE; j++) {
-
-                    Memory[i][j] = string[index];
-
-                    if(string[index] == '\0') return;
-                    index++;
-                }   
-            }
-        } else {
-            printf("memory overflow, cannot write in file");
-            file->totalBlocks = 0;
-        }
+        if(file->block != NULL)  putData(string,file->block);
+        else printf("memory overflow, cannot write in file");
     }
+}
+
+void printData(FreeNode *block) {
+
+    if(block == NULL) {
+        printf("no memory for this file");
+        return;
+    }
+
+    FreeNode *temp = block;
+    do{
+        for(int i = 0; i<BLOCK_SIZE; i++) {
+            if(Memory[temp->index][i] == '\0') return;
+
+            putchar(Memory[temp->index][i]);
+        }
+        temp = temp->next;
+    } while(temp != block);
 }
 
 void readFile(char *name) {
@@ -283,7 +338,7 @@ void readFile(char *name) {
             return;
         }
 
-        printf("\n%s",Memory[file->index]);
+        printData(file->block);
     }
 }
 
@@ -311,11 +366,13 @@ void listDirectory() {
         FileNode *iterator = cwd->child;
         
         printf("\n ");
-        while(iterator->next != cwd->child) {
+
+        do {
             printf("%s  ",iterator->name);
             iterator = iterator->next;
-        }
-        printf("%s\n",iterator->name);
+
+        } while(iterator != cwd->child);
+        
     } 
 }
 
@@ -446,26 +503,65 @@ void getInput() {
     while(True) {
         char command[20];
         printf("\n@-@ %s >",cwd->name);
-        scanf("%s",command);
+        scanf(" %19s",command);
+
 
         if(strlen(command) > 9) {
-            printf("\n%s is not a valid command");
+            printf("\n%s is not a valid command",command);
             clearInput();
         } else if(strcmp(command,"exit") == 0) {
-            return;
+            break;
         } else {
             execute(command);
         }
     }
 }
 
+// This function traverses whole VFS (a nested Linked List) and frees every node 
+void destroySelf(FileNode *prey) {
+
+    if(prey->type == 'd') {
+        if(prey->child != prey) {
+            cwd = prey;
+
+            destroySelf(prey->child);
+
+            prey->child = prey;
+            cwd = prey->parent;
+        }
+    }
+
+    if(prey->next != cwd->child) {
+
+        destroySelf(prey->next);
+    }
+
+    if(prey->type == 'f') clearFile(prey);
+
+    free(prey);
+
+    return;
+}
+
+void destroyVFS() {
+    cwd = rootDirectory;
+    destroySelf(rootDirectory);
+}
+
 int main() {
     insertChild("/",'d');
+
     rootDirectory = cwd;
 
     initializeFreeBlocks();
 
     getInput();
+
+
+    destroyVFS();
+
+
+    destroyMemory();
 
     return 0;
 
