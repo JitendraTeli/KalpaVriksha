@@ -40,27 +40,27 @@ Team *teamArray = NULL;
 int totalTeams = 0;
 
 
-int getIndexById(int id) {
+Team* getTeamById(int id) {
     int low = 0;
     int high = totalTeams-1;
     int mid = 0;
     
     while(low <= high) {
         mid = low + (high - low)/2;
-        if(teamArray[mid].id == id ) return mid;
+        if(teamArray[mid].id == id ) return teamArray + mid;
 
         if(teamArray[mid].id > id) high = mid-1;
         else low = mid + 1;
     }
-    return -1;
+    return NULL;
 }
 
-int getIndexByName(char *name) {
+Team* getTeamByName(char *name) {
     for(int i = 0; i < totalTeams; i++)
         if(strcmp(teamArray[i].name, name) == 0 ) 
-            return i;
+            return teamArray + i;
 
-    return -1;
+    return NULL;
 }
 
 void initializeTeams() {
@@ -112,16 +112,16 @@ Player* appendPlayer(Player *best,Player *newPlayer) {
 
 }
 
-void addPlayerInTeam(int index,Player *player) {
+void addPlayerInTeam(Team *team,Player *player) {
     if(strcmp(player->role,"Bowler") == 0) 
-        teamArray[index].ballers = appendPlayer(teamArray[index].ballers,player);
+        team->ballers = appendPlayer(team->ballers,player);
     
     else if(strcmp(player->role,"Batsman") == 0)
-        teamArray[index].batsmen = appendPlayer(teamArray[index].batsmen,player);
+        team->batsmen = appendPlayer(team->batsmen,player);
     
-    else teamArray[index].allRounders = appendPlayer(teamArray[index].allRounders,player);
+    else team->allRounders = appendPlayer(team->allRounders,player);
 
-    teamArray[index].totalPlayers++;
+    team->totalPlayers++;
     
 }
 
@@ -145,7 +145,7 @@ void initializePlayers() {
         
         updatePerforManceIndex(newPlayer);
 
-        addPlayerInTeam(getIndexByName(newPlayer->team),newPlayer);
+        addPlayerInTeam(getTeamByName(newPlayer->team),newPlayer);
     }
 }
 
@@ -171,16 +171,108 @@ void showEverything() {
     }
 }
 
+int sumOfStrikRate(Player *player,int *count) {
+    float sum = 0;
+    while(player != NULL) {
+        sum += player->strikeRate;
+        *count++;
 
+        player = player->next;
+    }
+    return sum;
+}
 
+void updateBattingAverageStrikeRate(Team *team) {
+   
+    int count = 0;
+    team->averageBattingStrikeRate += sumOfStrikRate(team->batsmen,&count);
+    team->averageBattingStrikeRate += sumOfStrikRate(team->allRounders,&count);
+
+    team->averageBattingStrikeRate /= count;
+}
+
+void updateBattingAverageOfAllTeams() {
+    for(int i = 0; i<totalTeams; i++) updateBattingAverageStrikeRate(teamArray + i);
+}
+
+void printLine() {
+    printf("\n");
+    for(int i = 0; i < 120; i++) printf("=");
+    printf("\n");
+}
+
+void printHeader() {
+    
+    printf("\n");
+    printLine();
+    printf("\n");
+
+    printf("%-5s ","ID");
+    printf("%-25s ","Name");
+    printf("%-15s ","Team");
+    printf("%-15s ","Role");
+    printf("%-5s ","Runs");
+    printf("%-5s ","Avg");
+    printf("%-5s ","SR");
+    printf("%-5s ","Wkts");
+    printf("%-5s ","ER");
+    printf("%-11s ","Perf.Index");
+
+    printf("\n");
+    printLine();
+    printf("\n");
+}
+
+void printTopK(Player *player,int k) {
+
+    while(player != NULL && k-- > 0) {
+        printf("\n");
+
+        printf("%-5d ",player->id);
+        printf("%-25s ",player->name);
+        printf("%-15s ",player->team);
+        printf("%-15s ",player->role);
+        printf("%-5d ",player->totalRuns);
+        printf("%-3.2f ",player->battingAvergae);
+        printf("%-3.2f ",player->strikeRate);
+        printf("%-5d ",player->wickets);
+        printf("%-3.2f ",player->economyRate);
+        printf("%-7.2f ",player->performanceIndex);
+
+        printf("\n");
+
+        player = player->next;
+    }
+}
+
+void ShowTopK(Team *team,int K,char *role) {    
+
+    printHeader();
+
+    if(strcmp(role,"Bowler") == 0) printTopK(team->ballers,K);
+    
+    else if(strcmp(role,"Batsman") == 0) printTopK(team->batsmen,K);
+
+    else printTopK(team->allRounders,K);
+
+    printLine();
+
+}
 
 int main() {
 
     initializeTeams();
 
     initializePlayers();
-    
+
     showEverything();
+    
+    updateBattingAverageOfAllTeams();
+    
+    ShowTopK(teamArray + 5,5,"Batsman");
+
+
+
 
     return 0;
 }
