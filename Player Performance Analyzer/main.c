@@ -3,9 +3,8 @@
 #include<string.h>
 
 #include "PLAYERS_DATA.H"   
-#include "Team.h"
-#include "Player.h"
-#include "RequiredSorting.h"
+#include "PlayersAndTeams.h"
+#include "RequiredSortingAndSearching.h"
 
 #define NAME_LENGTH 51
 #define TRUE 1
@@ -13,26 +12,6 @@
 
 Team *teamArray = NULL;
 int totalTeams = 0;
-
-void initializeTeams() {
-    teamArray = (Team *) calloc(teamCount,sizeof(Team));
-    
-    for(int i = 0; i<teamCount; i++) {
-        teamArray[i].id = i + 1000;
-        strcpy(teamArray[i].name,teams[i]);
-        teamArray[i].allRounders = NULL;
-        teamArray[i].batsmen = NULL;
-        teamArray[i].ballers  = NULL;
-        teamArray[i].totalPlayers = 0;
-        teamArray[i].averageBattingStrikeRate = 0;
-    }
-
-    totalTeams = teamCount;
-}
-
-void updateBattingAverageOfAllTeams() {
-    for(int i = 0; i<totalTeams; i++) updateBattingAverageStrikeRate(teamArray + i);
-}
 
 void initializePlayers() {
     
@@ -58,34 +37,6 @@ void initializePlayers() {
     }
 }
 
-void printLine() {
-    printf("\n");
-    for(int i = 0; i < 120; i++) printf("=");
-    printf("\n");
-}
-
-void printPlayerHeader() {
-    
-    printf("\n");
-    printLine();
-    printf("\n");
-    
-    printf("%-5s ","ID");
-    printf(" %-25s ","Name");
-    printf(" %-15s ","Team");
-    printf(" %-15s ","Role");
-    printf(" %-5s ","Runs");
-    printf(" %-5s ","Avg");
-    printf(" %-5s ","SR");
-    printf(" %-5s ","Wkts");
-    printf(" %-5s ","ER");
-    printf(" %-11s ","Perf.Index");
-    
-    printf("\n");
-    printLine();
-    printf("\n");
-}
-
 
 void showEverything() {
     for(int i = 0; i < totalTeams; i++) {
@@ -101,7 +52,6 @@ void showEverything() {
         showList(teamArray[i].allRounders);
     }
 }
-
 
 Player** initializePlayerHeap(char *role,int *size) {
     Player **heapOfPlayers = (Player **)calloc(totalTeams+2,sizeof(Player*));
@@ -137,6 +87,26 @@ void ShowAllPlayers(char *role) {
     }
 }
 
+void clearInput() {
+    int something;
+    while((something = getchar()) != '\n' && something != EOF);
+}
+
+char* getName() {
+    char *name = (char *) malloc(NAME_LENGTH + 10 * sizeof(char));
+
+    scanf("%60s",name);
+    
+    if(strlen(name) > 50 ) {
+        printf("error : name length cannot exceed 50");
+        clearInput();
+        free(name);
+        return NULL;
+    }
+
+    return name;
+}
+
 void printTeamIds() {
     printf("Team IDs\n");
     for(int i = 0; i<teamCount; i++) {
@@ -157,14 +127,17 @@ Team* inputTeam() {
 
 void inputPlayer() {
     Player *newPlayer = (Player *) malloc(sizeof(Player));
-
+    char *name;
     Team *team = inputTeam();
 
     printf("Player ID: ");
     scanf("%d",&newPlayer->id);
 
     printf("Name: ");
-    scanf("%s",newPlayer->name);
+    name = getName();
+    if(name) strcpy(newPlayer->name,name);
+
+    free(name);
 
     printf("Role (Batsman,Bowler,All-rounder): ");
     scanf("%s",newPlayer->role);
@@ -195,7 +168,7 @@ void inputPlayer() {
 
     updateBattingAverageStrikeRate(team);
 
-    printf("Player added Successfully to Team %s",team->name);
+    printf("%s added Successfully to Team %s",newPlayer->name,team->name);
 }
 
 void displayAllPlayersOfTeam() {
@@ -311,11 +284,12 @@ void startInput() {
 
 int main() {
 
-    initializeTeams();
+    teamArray = initializeTeams(teamArray,teams,teamCount);
+    if(teamArray) totalTeams = teamCount;
 
     initializePlayers();
     
-    updateBattingAverageOfAllTeams();
+    updateBattingAverageOfAllTeams(teamArray,totalTeams);
     
     startInput();
 

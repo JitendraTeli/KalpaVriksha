@@ -2,8 +2,11 @@
 
 #define Requrired_Sorting_H
 
-#include "Team.h"
-#include "Player.h"
+#include "PlayersAndTeams.h"
+
+Team* getTeamById(Team *teamArray,int totalTeams,int id);
+
+Team* getTeamByName(Team *teamArray,char *name,int totalTeams);
 
 void swapPlayers(Player **greater, Player **lesser);
 
@@ -18,9 +21,6 @@ void swapIntegers(int *lesser,int *greater);
 int partition(int *array,int low,int high, int (*compare)(int,int));
 
 void quickSort(int *array,int low,int high,int (*compare)(int,int));
-
-
-
 
 
 #endif

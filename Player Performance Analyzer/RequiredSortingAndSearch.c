@@ -1,7 +1,32 @@
 #include<stdio.h>
+#include<string.h>
 
-#include "RequiredSorting.h"
+#include "RequiredSortingAndSearching.h"
 
+
+
+Team* getTeamById(Team *teamArray,int totalTeams,int id) {
+    int low = 0;
+    int high = totalTeams-1;
+    int mid = 0;
+    
+    while(low <= high) {
+        mid = low + (high - low)/2;
+        if(teamArray[mid].id == id ) return teamArray + mid;
+
+        if(teamArray[mid].id > id) high = mid-1;
+        else low = mid + 1;
+    }
+    return NULL;
+}
+
+Team* getTeamByName(Team *teamArray,char *name,int totalTeams) {
+    for(int i = 0; i < totalTeams; i++)
+        if(strcmp(teamArray[i].name, name) == 0 ) 
+            return teamArray + i;
+
+    return NULL;
+}
 
 void swapPlayers(Player **greater, Player **lesser) {
     Player *temp = *greater;
@@ -71,6 +96,5 @@ void quickSort(int *array,int low,int high,int (*compare)(int,int)) {
         quickSort(array,low,pivot-1,compare);
         quickSort(array,pivot+1,high,compare);
     }
-
     
 }
