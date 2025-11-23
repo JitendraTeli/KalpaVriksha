@@ -3,10 +3,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
 void access(HashNode *temp,Cache *cache) {
     if(cache->head == NULL) {
         cache->tail =  cache->head = temp;
-       
     } else if(temp != cache->head) {
 
         if(temp == cache->tail) cache->tail = temp->prev;
@@ -21,6 +21,8 @@ void access(HashNode *temp,Cache *cache) {
 
         cache->head = temp;  
     }
+
+    
 }
 
 int hash(int key,int size) {
@@ -29,6 +31,7 @@ int hash(int key,int size) {
 }
 
 void pop(Cache *cache) {
+
     int index = hash(cache->tail->key,cache->size);
     HashNode *temp = cache->HashMap[index];
 
@@ -59,9 +62,8 @@ HashNode** generateMap(int capacity) {
 HashNode* search(HashNode *start,int key) {
     while(start != NULL) {
         if(start->key == key ) break;
-        start = start->next;
+        start = start->child;
     }
-
     return start;
 }
 
@@ -84,6 +86,7 @@ void put(int key,char *token,Cache *cache) {
             temp->child = cache->HashMap[index];
             cache->HashMap[index] = temp;
 
+            
             temp->next = NULL;
             temp->prev = NULL;
         } else {
@@ -95,5 +98,9 @@ void put(int key,char *token,Cache *cache) {
 }
 
 char* get(int key,Cache *cache) {
-    return search(cache->HashMap[hash(key,cache->size)],key)->token;
+    HashNode *result = search(cache->HashMap[hash(key,cache->size)],key);
+
+    if(result) return result->token;
+
+    return "null";
 }
