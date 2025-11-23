@@ -47,6 +47,8 @@ void pop(Cache *cache) {
     free(cache->tail->next);
 
     cache->tail->next = NULL;
+
+    cache->nodeCount--;
 }
 
 
