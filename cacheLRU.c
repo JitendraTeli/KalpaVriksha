@@ -1,12 +1,5 @@
 #include<stdio.h>
 
-typedef struct Node {
-    int key;
-
-    struct Node *next;
-    struct NOde *prev;
-} Node;
-
 typedef struct HashNode {
     int key;
     char* token;
@@ -18,13 +11,36 @@ typedef struct HashNode {
 } HashNode;
 
 
-Node *head = NULL;
-Node *tail = NULL;
+HashNode *head = NULL;
+HashNode *tail = NULL;
 
 HashNode **HashMap = NULL;
+int maxNodes = 0;
 
-void access(int key) {
-    
+void access(HashNode *temp) {
+    if(head == NULL) {
+        head = temp;
+        tail = head;
+    } else if(temp != head) {
+
+        if(temp == tail) tail = temp->prev;
+        
+        if(temp->next) temp->next->prev = temp->prev;
+        if(temp->prev) temp->prev->next = temp->next;
+
+        temp->next = head;
+        head->prev = temp;
+
+        temp->prev = NULL;
+
+        head = temp;  
+    }
+}
+
+void pop() {
+    tail = tail->prev;
+
+    free(tail->next);
 }
 
 int hash(int key) {
@@ -41,47 +57,65 @@ HashNode** generateMap(int capacity) {
 }
 
 
+HashNode* search(HashNode *start,int key) {
+    while(start != NULL) {
+        if(start->key == key ) break;
+        head = start->next;
+    }
+
+    return start;
+}
 
 void put(int key,char *token) {
+
     int index = hash(key);
 
-    HashNode *temp = HashMap[index];
+    HashNode *temp = search(HashMap[index],key);
 
-    if(temp == NULL) {
-        HashMap[index] = (HashNode *) malloc(sizeof(HashNode));
-        HashMap[index]->key = key;
-        HashMap[index]->token = token;
+    if(temp) {
+        temp->token = token;
     } else {
-        while(temp->next != NULL) {
-            
-            if(temp->key == key) {
-                temp->token = token;
-                return ;
-            }
+        temp = (HashNode *) malloc(sizeof(HashNode));
+        if(temp) {
+            temp->key = key;
+            temp->token = token;
+            temp->child = HashMap[index];
+            HashMap[index] = temp;
 
-            temp = temp->next;
+            temp->next = NULL;
+            temp->prev = NULL;
+        } else {
+            printf("cout memory allocation failed :( ");
+            return;
         }
-
-        temp->next = (HashNode *) malloc(sizeof(HashNode));
-        temp->next->key = key;
-        temp->next->token = token;
     }
+    access(temp);
+
+
+
+    // if(temp == NULL) {
+    //     HashMap[index] = (HashNode *) malloc(sizeof(HashNode));
+    //     HashMap[index]->key = key;
+    //     HashMap[index]->token = token;
+    // } else {
+    //     while(temp->next != NULL) {
+            
+    //         if(temp->key == key) {
+    //             temp->token = token;
+    //             return ;
+    //         }
+
+    //         temp = temp->next;
+    //     }
+
+    //     temp->next = (HashNode *) malloc(sizeof(HashNode));
+    //     temp->next->key = key;
+    //     temp->next->token = token;
+    // }
 }
 
 HashNode* get(int key) {
-    int index = hash(key);
-
-    HashNode *temp = HashMap[index];
-    
-    while(temp != NULL) {
-        if(temp->key == key) {
-            access(key);
-            break;
-        }
-        temp = temp->next;
-    }
-
-    return temp;
+    return search(HashMap[hash(key)],key);
 }
 
 
