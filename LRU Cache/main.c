@@ -6,7 +6,6 @@
 
 #define TOKEN_LENGTH 20
 
-
 void handlePut(Cache *cache,int key) {
     char *token = (char *) malloc(TOKEN_LENGTH*sizeof(char));
 
@@ -52,7 +51,6 @@ int main() {
     
     cache.HashMap = generateMap(capacity);
     cache.size = capacity;
-
+    
     startInput(&cache);
-
 }

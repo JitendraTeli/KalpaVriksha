@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
 void access(HashNode *temp,Cache *cache) {
     if(cache->head == NULL) {
         cache->tail =  cache->head = temp;
@@ -21,12 +20,9 @@ void access(HashNode *temp,Cache *cache) {
 
         cache->head = temp;  
     }
-
-    
 }
 
 int hash(int key,int size) {
-
     return key%size;
 }
 
@@ -51,7 +47,6 @@ void pop(Cache *cache) {
     cache->nodeCount--;
 }
 
-
 HashNode** generateMap(int capacity) {
     HashNode **map = (HashNode **) calloc(capacity,sizeof(HashNode*));
 
@@ -59,7 +54,6 @@ HashNode** generateMap(int capacity) {
 
     return map;
 }
-
 
 HashNode* search(HashNode *start,int key) {
     while(start != NULL) {
@@ -88,7 +82,6 @@ void put(int key,char *token,Cache *cache) {
             temp->child = cache->HashMap[index];
             cache->HashMap[index] = temp;
 
-            
             temp->next = NULL;
             temp->prev = NULL;
         } else {

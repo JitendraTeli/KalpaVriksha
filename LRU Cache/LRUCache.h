@@ -2,7 +2,6 @@
 
 #define LRU_HASH_H
 
-
 typedef struct HashNode {
     int key;
     char* token;
@@ -20,7 +19,6 @@ typedef struct Cache {
     int nodeCount;
     int size;
 } Cache;
-
 
 void access(HashNode *temp,Cache *cache);
 
