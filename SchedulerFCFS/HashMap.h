@@ -17,11 +17,18 @@ typedef struct HashMap {
     int capacity;
 } HashMap;
 
-int hash(int key,int size) {
-    key = key ^ (key >> (sizeof(key)*4));
-    return (key & size);
-}
+int hash(int key,int size);
 
+float sizeFactor(int capacity,int size);
 
+HashMap* makeMap(int size);
+
+void insert(HashNode **head,HashNode *node);
+
+void reshape(HashMap *Map);
+
+void put(HashMap *Map,int key,void *val);
+
+void* get(HashMap *Map,int key);
 
 #endif

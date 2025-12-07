@@ -4,4 +4,103 @@
 #include<stdio.h>
 #include<stdlib.h>
 
+#define FACTOR 7.5
 
+int hash(int key,int size) {
+    key = key ^ (key >> (sizeof(key)*4));
+    return (key & size);
+}
+
+float sizeFactor(int capacity,int size) {
+    return (float) size / (float) capacity;
+}
+
+HashMap* makeMap(int size) {
+    HashMap *map = malloc(sizeof(HashMap));
+    map->map = (HashNode ** ) malloc(size * sizeof(HashNode *));
+    map->capacity = size;
+    map->size = 0;
+    return map;
+}
+
+void insert(HashNode **head,HashNode *node) {
+    node->next = NULL;
+    if(*head == NULL) {
+        *head = node;
+    } else {
+        HashNode *temp = *head;
+        while(temp && temp->next ) {
+            temp = temp->next;
+        }
+        temp->next = node;
+    }
+}
+
+void reshape(HashMap *Map) {   
+    HashNode **oldMap = Map->map; 
+    int oldCapacity = Map->capacity;
+
+    Map->map = malloc(2 * Map->capacity * sizeof(HashNode*));
+
+    for(int i = 0; i<Map->capacity; i++) {
+        HashNode *temp = oldMap[i];
+
+        while(temp) {
+            HashNode *node = temp;
+            temp = temp->next;
+
+            insert(Map->map + hash(node->key,2 * Map->capacity),node);  
+        }
+    }
+    Map->capacity *= 2;
+}
+
+void put(HashMap *Map,int key,void *val) {
+    int index = hash(key,Map->capacity);
+
+    HashNode *temp = Map->map[index];
+
+    while(temp && temp->next) {
+        if(temp->key == key)  {
+            temp->value = val;
+            return;
+        }
+
+        temp = temp->next;
+    }
+
+    HashNode *newNode = malloc(sizeof(HashNode));
+    newNode->key = key;
+    newNode->value = val;
+    newNode->next = NULL;
+
+    if(temp == NULL) {
+        Map->map[index] = newNode;
+    } else {
+        temp->next = newNode;
+    }
+
+    if(sizeFactor(Map->capacity,Map->size) >= FACTOR) reshape(Map);
+}
+
+void* get(HashMap *Map,int key) {
+    int index = hash(key,Map->capacity);
+
+    HashNode *temp = Map->map[index];
+    HashNode *prev = NULL;
+    while(temp) {
+        if(temp->key == key) {
+            break;
+        }
+        prev = temp;
+        temp = temp->next;
+    }
+
+    if(prev) prev->next = NULL; else Map->map[index] = NULL;
+
+    void *value = temp->value;
+
+    free(temp);
+
+    return value;
+}
