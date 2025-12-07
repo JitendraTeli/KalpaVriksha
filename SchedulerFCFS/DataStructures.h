@@ -31,4 +31,23 @@ void put(HashMap *Map,int key,void *val);
 
 void* get(HashMap *Map,int key);
 
+
+typedef struct Node {
+    void *value;
+
+    struct Node *next;
+    struct Node *prev;
+} Node;
+
+typedef struct List {
+    Node *head;
+    Node *tail;
+} List;
+
+void enque(List *queue,Node *newNode);
+
+Node* deque(List *queue);
+
+void remove(List *queue,Node *node);
+
 #endif

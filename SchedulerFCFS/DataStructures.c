@@ -1,5 +1,5 @@
 
-#include "HashMap.h"
+#include "DataStructures.h"
 
 #include<stdio.h>
 #include<stdlib.h>
@@ -104,3 +104,32 @@ void* get(HashMap *Map,int key) {
 
     return value;
 }
+
+
+void enque(List *queue,Node *newNode) {
+    if(queue->head == NULL) {
+        queue->head = queue->tail = newNode;
+    } else {
+        newNode->prev = queue->tail;
+        queue->tail->next = newNode;
+        queue->tail = newNode;
+    }
+}
+
+Node* deque(List *queue) {
+    if(queue->head == NULL) return NULL;
+
+    Node *temp = queue->head;
+    queue->head = queue->head->next;
+    queue->head->prev = NULL;
+
+    return temp;
+}
+
+void remove(List *queue,Node *node) {
+    if(node == queue->head) queue->head = queue->head->next;
+    if(node == queue->tail) queue->tail = queue->tail->prev;
+
+    if(node->next) node->next->prev = node->prev;
+    if(node->prev) node->prev->next = node->next;
+} 
