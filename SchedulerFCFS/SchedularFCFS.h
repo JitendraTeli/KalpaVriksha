@@ -8,16 +8,16 @@ typedef struct Process {
     char *name;
     int id;
     int time;
-    int waiting;
-    int waitingTime;
+    int startIO;
+    int timeIO;
 
-    int totalWaitingTime;
+    int totaltimeIO;
 
 } Process;
 
 typedef struct Schedular {
     HashMap processes;
-    List *waiting;
+    List *startIO;
     List *ready;
     List *terminated;
 } Schedular;

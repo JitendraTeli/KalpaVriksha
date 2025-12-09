@@ -83,7 +83,7 @@ void put(HashMap *Map,int key,void *val) {
     if(sizeFactor(Map->capacity,Map->size) >= FACTOR) reshape(Map);
 }
 
-void* get(HashMap *Map,int key) {
+void* pop(HashMap *Map,int key) {
     int index = hash(key,Map->capacity);
 
     HashNode *temp = Map->map[index];
@@ -95,14 +95,30 @@ void* get(HashMap *Map,int key) {
         prev = temp;
         temp = temp->next;
     }
+    
+    if(temp == NULL) return NULL;
 
-    if(prev) prev->next = NULL; else Map->map[index] = NULL;
+    if(prev) prev->next = temp->next; else Map->map[index] = temp->next;
 
     void *value = temp->value;
 
     free(temp);
 
     return value;
+}
+
+void* get(HashMap *Map,int key) {
+    HashNode *temp = Map->map[hash(key,Map->capacity)];
+
+    while(temp) {
+        if(temp->key == key) {
+            return temp->value;
+        }
+
+        temp = temp->next;
+    }
+
+    return NULL;
 }
 
 
@@ -123,6 +139,9 @@ Node* deque(List *queue) {
     queue->head = queue->head->next;
     queue->head->prev = NULL;
 
+    temp->next = NULL;
+    temp->prev = NULL;
+
     return temp;
 }
 
@@ -132,4 +151,7 @@ void remove(List *queue,Node *node) {
 
     if(node->next) node->next->prev = node->prev;
     if(node->prev) node->prev->next = node->next;
+
+    node->next = NULL;
+    node->prev = NULL;
 } 
