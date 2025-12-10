@@ -65,27 +65,6 @@ void printHeader();
 
 void showOutput();
 
-void showList(List *list) {
-    Node *head = list->head; 
-    while(head) {
-        printf("%s -> ",((Process *) head->value)->name);
-        head = head->next;
-    }
-
-    printf("\n");
-}
-
-void showAllLists() {
-    printf("\n All Lists \n");
-
-    printf("R : ");
-    showList(fcfs->ready);
-    printf("W : ");
-    showList(fcfs->waiting);
-    printf("T : ");
-    showList(fcfs->terminated);
-}
-
 int main() {
     Events = makeMap(8);
 
@@ -97,6 +76,15 @@ int main() {
     beginExecution();
 
     showOutput();
+
+    free(Events->map);
+    free(Events);
+
+    free(fcfs->processes->map);
+    free(fcfs->processes);
+    free(fcfs->ready);
+    free(fcfs->waiting);
+    free(fcfs->terminated);
 
     return 0;
 }
@@ -236,7 +224,7 @@ void beginExecution() {
         
         if(current && current->turnAroundTime == current->time) {
             current->turnAroundTime += current->waitingTime;
-            enque(fcfs->terminated,get(fcfs->processes,current->id));
+            enque(fcfs->terminated,pop(fcfs->processes,current->id));
             current = NULL;
         }
 
@@ -247,7 +235,6 @@ void beginExecution() {
         if(current) {
             current->turnAroundTime++;
         }
-        //sleep(1);
         clock++;
     }
 }
@@ -258,9 +245,12 @@ void printDetails(Process *Process) {
     printf(" %-7s",Process->status == kill ? "Killed":"OK");
     printf(" %-10d",Process->time);
     printf(" %-10d",Process->timeIO);
+    printf(" %-15d",Process->turnAroundTime);
     printf(" %-15d",Process->waitingTime);
-    printf(" %d",Process->turnAroundTime);
     printf("\n");
+
+    free(Process->name);
+    free(Process);
 }
 
 void printHeader() {
@@ -269,8 +259,8 @@ void printHeader() {
     printf(" %-7s","Status");
     printf(" %-10s","Burst");
     printf(" %-10s","IO");
+    printf(" %-15s","TurnAround");
     printf(" %-15s","Waiting");
-    printf(" %s","Turn Around Time");
     printf("\n");
 }
 
@@ -281,6 +271,8 @@ void showOutput() {
 
     while((node = deque(fcfs->terminated))) {
         printDetails(node->value);
+
+        free(node);
         node = NULL;
     }
 }
