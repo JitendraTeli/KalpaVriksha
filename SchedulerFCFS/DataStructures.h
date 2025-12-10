@@ -29,6 +29,8 @@ void reshape(HashMap *Map);
 
 void put(HashMap *Map,int key,void *val);
 
+void* pop(HashMap *Map,int key);
+
 void* get(HashMap *Map,int key);
 
 
@@ -44,10 +46,12 @@ typedef struct List {
     Node *tail;
 } List;
 
+List* makeList();
+
 void enque(List *queue,Node *newNode);
 
 Node* deque(List *queue);
 
-void remove(List *queue,Node *node);
+void detach(List *queue,Node *node);
 
 #endif

@@ -8,7 +8,7 @@
 
 int hash(int key,int size) {
     key = key ^ (key >> (sizeof(key)*4));
-    return (key & size);
+    return (key & (size-1));
 }
 
 float sizeFactor(int capacity,int size) {
@@ -17,7 +17,7 @@ float sizeFactor(int capacity,int size) {
 
 HashMap* makeMap(int size) {
     HashMap *map = malloc(sizeof(HashMap));
-    map->map = (HashNode ** ) malloc(size * sizeof(HashNode *));
+    map->map = (HashNode ** ) calloc(size , sizeof(HashNode *));
     map->capacity = size;
     map->size = 0;
     return map;
@@ -40,7 +40,7 @@ void reshape(HashMap *Map) {
     HashNode **oldMap = Map->map; 
     int oldCapacity = Map->capacity;
 
-    Map->map = malloc(2 * Map->capacity * sizeof(HashNode*));
+    Map->map = calloc(2 * Map->capacity , sizeof(HashNode*));
 
     for(int i = 0; i<Map->capacity; i++) {
         HashNode *temp = oldMap[i];
@@ -53,6 +53,8 @@ void reshape(HashMap *Map) {
         }
     }
     Map->capacity *= 2;
+
+    free(oldMap);
 }
 
 void put(HashMap *Map,int key,void *val) {
@@ -60,7 +62,7 @@ void put(HashMap *Map,int key,void *val) {
 
     HashNode *temp = Map->map[index];
 
-    while(temp && temp->next) {
+    while(temp) {
         if(temp->key == key)  {
             temp->value = val;
             return;
@@ -74,13 +76,12 @@ void put(HashMap *Map,int key,void *val) {
     newNode->value = val;
     newNode->next = NULL;
 
-    if(temp == NULL) {
-        Map->map[index] = newNode;
-    } else {
-        temp->next = newNode;
-    }
+    newNode->next = Map->map[index];
+    Map->map[index] = newNode;
 
-    if(sizeFactor(Map->capacity,Map->size) >= FACTOR) reshape(Map);
+    Map->size++;
+
+    if(sizeFactor(Map->capacity,Map->size) > FACTOR) reshape(Map);
 }
 
 void* pop(HashMap *Map,int key) {
@@ -104,8 +105,11 @@ void* pop(HashMap *Map,int key) {
 
     free(temp);
 
+    Map->size--;
+
     return value;
 }
+
 
 void* get(HashMap *Map,int key) {
     HashNode *temp = Map->map[hash(key,Map->capacity)];
@@ -122,6 +126,15 @@ void* get(HashMap *Map,int key) {
 }
 
 
+List* makeList() {
+    List *list = malloc(sizeof(List));
+
+    list->head = NULL;
+    list->tail = NULL;
+
+    return list;
+}
+
 void enque(List *queue,Node *newNode) {
     if(queue->head == NULL) {
         queue->head = queue->tail = newNode;
@@ -137,7 +150,7 @@ Node* deque(List *queue) {
 
     Node *temp = queue->head;
     queue->head = queue->head->next;
-    queue->head->prev = NULL;
+    if(queue->head) queue->head->prev = NULL; else queue->tail = NULL;
 
     temp->next = NULL;
     temp->prev = NULL;
@@ -145,7 +158,9 @@ Node* deque(List *queue) {
     return temp;
 }
 
-void remove(List *queue,Node *node) {
+void detach(List *queue,Node *node) {
+    if(queue->head == NULL) return;
+
     if(node == queue->head) queue->head = queue->head->next;
     if(node == queue->tail) queue->tail = queue->tail->prev;
 

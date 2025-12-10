@@ -1,5 +1,4 @@
 #include "DataStructures.h"
-#include "SchedularFCFS.h"
 
 #include<stdio.h>
 #include<stdlib.h>
@@ -23,22 +22,7 @@ typedef struct Event {
 
 HashMap *Events = NULL;
 
-void addEvent(Type event,int id,int time) {
-    Event *newEvent = malloc(sizeof(Event));
-    newEvent->event = event;
-    newEvent->id = id;
-    newEvent->next = NULL;
-
-    Event *eventList = get(Events,time);
-    if(eventList) eventList->next = newEvent; else eventList = newEvent;
-
-    put(Events,time,eventList);
-}
-
-Event* getEvent(int time) {
-    return (Event*) get(Events,time);
-}
-
+void addEvent(Type event,int id,int time);
 
 typedef struct Process {
     char *name;
@@ -65,22 +49,87 @@ Schedular *fcfs;
 Process *current = NULL;
 int clock = 0;
 
-
+void addProcess(char *name,int id,int time,int startIO,int timeIO);
 
 void commenceInput();
 
+void handle(Event *event);
 
+Process* getNextProcess();
+
+void beginExecution();
+
+void printDetails(Process *Process);
+
+void printHeader();
+
+void showOutput();
+
+void showList(List *list) {
+    Node *head = list->head; 
+    while(head) {
+        printf("%s -> ",((Process *) head->value)->name);
+        head = head->next;
+    }
+
+    printf("\n");
+}
+
+void showAllLists() {
+    printf("\n All Lists \n");
+
+    printf("R : ");
+    showList(fcfs->ready);
+    printf("W : ");
+    showList(fcfs->waiting);
+    printf("T : ");
+    showList(fcfs->terminated);
+}
 
 int main() {
     Events = makeMap(8);
 
-    Schedular FCFS = {makeMap(),NULL,NULL,NULL};
+    Schedular FCFS = {makeMap(8),makeList(),makeList(),makeList()};
+    fcfs = &FCFS;
 
+    commenceInput();
 
+    showAllLists();
 
+    beginExecution();
+
+    showAllLists();
+
+    showOutput();
 
     return 0;
 }
+
+void addEvent(Type event,int id,int time) {
+    printf("clock %d ",clock);
+
+    showAllLists();
+
+    Event *newEvent = malloc(sizeof(Event));
+    newEvent->event = event;
+    newEvent->id = id;
+    newEvent->next = NULL;
+
+    Event *eventList = get(Events,time);
+
+    if(eventList == NULL) {
+        eventList = newEvent;
+    } else {
+        Event *temp = eventList;
+
+        while(temp->next) temp = temp->next;
+
+        temp->next = newEvent;
+    }
+
+    put(Events,time,eventList);
+}
+
 
 void addProcess(char *name,int id,int time,int startIO,int timeIO) {
     Process *process = malloc(sizeof(Process));
@@ -95,7 +144,13 @@ void addProcess(char *name,int id,int time,int startIO,int timeIO) {
     process->turnAroundTime = 0;
     process->waitingTime = 0;
 
-    put(fcfs->processes,process->id,process);
+    Node *node = malloc(sizeof(Node));
+
+    node->prev = node->next = NULL;
+    node->value = process;
+
+    put(fcfs->processes,process->id,node);
+    enque(fcfs->ready,node);
 
 }
 
@@ -108,7 +163,9 @@ void commenceInput() {
     while(fgets(buffer,BUFFER_LENGTH-1,stdin) != NULL) {
         startIO = timeIO = -1;  //no io
 
-        int allocations = sscanf(buffer,"%s %d %d %d %d",name,id,time,startIO,timeIO);
+        int allocations = sscanf(buffer,"%19s %d %d %d %d",name,&id,&time,&startIO,&timeIO);
+
+        if(allocations == -1) break;
 
         if(allocations < 3) continue;
 
@@ -123,63 +180,110 @@ void commenceInput() {
     free(buffer);   
 }
 
-void killProcess(Process *process) {
-    if(current == process) {
-        
-    }
-}
-
 void handle(Event *event) {
+    if(event == NULL) return;
     Event *temp;
 
     while(event) {
         temp = event;
-
-        if(event->event == kill) {
-            killProcess(get(fcfs->processes,event->id));
-        } else if(event->event == ready) {
-
-        } else if(event->event == wait) {
-
-        } 
-
         
-        
+        Node *processNode = get(fcfs->processes,event->id);
+
+        if(!processNode) continue;
+
+        Process *process = processNode->value;
+
+        if(current == processNode->value) current = NULL;
+        if(process->status != kill) {
+
+            if(process->status == wait) detach(fcfs->waiting,processNode);
+            else if(process->status == ready) detach(fcfs->ready,processNode);
+            
+            if(event->event == kill) {
+                process->status = kill;
+                enque(fcfs->terminated,processNode);
+    
+            } else if(event->event == ready) {
+                process->status = ready;
+                enque(fcfs->ready,processNode);
+    
+            } else if(event->event == wait) {
+                process->status = wait;
+
+                addEvent(ready,process->id,clock + process->timeIO);
+                enque(fcfs->waiting,processNode);
+            } 
+        }
         event = event->next;
         free(temp);
     }
 }
 
 Process* getNextProcess() {
-    Process* nextProcess = deque(fcfs->ready);
+    Process* nextProcess = fcfs->ready->head ? deque(fcfs->ready)->value: NULL;
 
     if(nextProcess) {
         if(!nextProcess->waitingTime && nextProcess->startIO != -1) {
             addEvent(wait,nextProcess->id,clock + nextProcess->startIO);
         }
+        nextProcess->waitingTime = clock - nextProcess->turnAroundTime;
     }
 
     return nextProcess;
 }
 
 void beginExecution() {
-    while(fcfs->ready || fcfs->waiting) {
-        handle((Event *) pop(Events,clock));
+    while(fcfs->ready->head || fcfs->waiting->head || current) {
+
+        handle(pop(Events,clock));
         
         if(current && current->turnAroundTime == current->time) {
+            current->turnAroundTime += current->waitingTime;
             enque(fcfs->terminated,get(fcfs->processes,current->id));
             current = NULL;
         }
 
         if(current == NULL) {
-            current = getNextProcess();
+            if(current = getNextProcess()) continue;
         }
 
         if(current) {
             current->turnAroundTime++;
         }
-
-        sleep(1);
+        //sleep(1);
         clock++;
+    }
+}
+
+void printDetails(Process *Process) {
+    printf("%-20s",Process->name);
+    printf(" %-5d",Process->id);
+    printf(" %-7s",Process->status == kill ? "Killed":"OK");
+    printf(" %-10d",Process->time);
+    printf(" %-10d",Process->timeIO);
+    printf(" %-15d",Process->waitingTime);
+    printf(" %d",Process->turnAroundTime);
+    printf("\n");
+}
+
+void printHeader() {
+    printf("%-20s","Name");
+    printf(" %-5s","ID");
+    printf(" %-7s","Status");
+    printf(" %-10s","Burst");
+    printf(" %-10s","IO");
+    printf(" %-15s","Waiting");
+    printf(" %s","Turn Around Time");
+    printf("\n");
+}
+
+void showOutput() {
+    Node *node;
+
+    printHeader();
+
+    while((node = deque(fcfs->terminated))) {
+        printDetails(node->value);
+        node = NULL;
     }
 }
