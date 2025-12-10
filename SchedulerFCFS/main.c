@@ -94,11 +94,7 @@ int main() {
 
     commenceInput();
 
-    showAllLists();
-
     beginExecution();
-
-    showAllLists();
 
     showOutput();
 
@@ -106,9 +102,6 @@ int main() {
 }
 
 void addEvent(Type event,int id,int time) {
-    printf("clock %d ",clock);
-
-    showAllLists();
 
     Event *newEvent = malloc(sizeof(Event));
     newEvent->event = event;
@@ -204,6 +197,7 @@ void handle(Event *event) {
                 enque(fcfs->terminated,processNode);
     
             } else if(event->event == ready) {
+                if(process->status == wait) process->startIO = -1;
                 process->status = ready;
                 enque(fcfs->ready,processNode);
     
@@ -215,6 +209,7 @@ void handle(Event *event) {
             } 
         }
         event = event->next;
+
         free(temp);
     }
 }
@@ -226,7 +221,9 @@ Process* getNextProcess() {
         if(!nextProcess->waitingTime && nextProcess->startIO != -1) {
             addEvent(wait,nextProcess->id,clock + nextProcess->startIO);
         }
+
         nextProcess->waitingTime = clock - nextProcess->turnAroundTime;
+
     }
 
     return nextProcess;
