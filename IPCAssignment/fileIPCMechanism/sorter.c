@@ -7,12 +7,12 @@ size_t gSize = 0;
 int* readArrayFromFile(char *fileName) {
     FILE *numsFile = fopen(fileName,"r");
 
-    fscanf("SIZE %zu",&gSize);
+    fscanf(numsFile,"%zu",&gSize);
 
     int *array = calloc(gSize,sizeof(int));
 
     for(size_t i = 0; i<gSize; i++) {
-        fscanf("%d",array + i);
+        fscanf(numsFile,"%d",array + i);
     }
 
     fclose(numsFile);
@@ -24,10 +24,10 @@ void writeArray(char *fileName,int *nums) {
     FILE *numsFile  = fopen(fileName,"w");
 
     for(size_t i = 0; i<gSize; i++) {
-        fprintf("%d ",nums[i]);
+        fprintf(numsFile,"%d ",nums[i]);
     }
 
-    fclose(fileName);
+    fclose(numsFile);
 }
 
 int comarator(const void *num1, const void *num2) {
@@ -38,11 +38,12 @@ int comarator(const void *num1, const void *num2) {
 }
 
 int main(int argc,char *argv[]) {
-    int *nums= readArrayFromFile(argv[0]);
+
+    int *nums= readArrayFromFile(argv[1]);
 
     qsort(nums,gSize,sizeof(int),comarator);
 
-    writeArray(argv[0],nums);
+    writeArray(argv[1],nums);
 
     free(nums);
 
