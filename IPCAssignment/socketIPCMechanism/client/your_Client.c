@@ -4,6 +4,9 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
+#define STATUS_OK                 0
+#define STATUS_INSUFFICIENT_FUNDS 1
+
 #define PORT 8080
 
 typedef enum {
@@ -17,6 +20,7 @@ typedef struct {
     Operation op;
     int amount;
 } Request;
+
 
 Operation parse_operation(char *op) {
     if (strcmp(op, "withdraw") == 0) return OP_WITHDRAW;
@@ -34,32 +38,57 @@ int main() {
     printf("Enter: userId operation amount\n");
     printf("Example: 1 withdraw 500\n");
 
-    scanf("%d %s %d", &req.userId, opStr, &req.amount);
+    while (1) {
+        printf("> ");
 
-    req.op = parse_operation(opStr);
-    if (req.op == OP_BALANCE)
-        req.amount = 0;
+        if (scanf("%d %s", &req.userId, opStr) != 2) {
+            scanf("%s",opStr);
+            if (strcmp(opStr, "exit") == 0) break;
+            else {
+                printf("invalid Input");
+                continue;
+            }
+        }
+        req.op = parse_operation(opStr);
 
-    sock = socket(AF_INET, SOCK_STREAM, 0);
+        if(req.op == -1) {
+            printf("invalid operation: allowed oprations are deposit, withdraw, balance");
+            continue;
+        }
+        if (req.op == OP_BALANCE) req.amount = 0;
+        else scanf("%d", &req.amount);
 
-    server.sin_family = AF_INET;
-    server.sin_port = htons(PORT);
-    inet_pton(AF_INET, "127.0.0.1", &server.sin_addr);
 
-    connect(sock, (struct sockaddr *)&server, sizeof(server));
+        int sock = socket(AF_INET, SOCK_STREAM, 0);
 
-    write(sock, &req, sizeof(req));
+        server.sin_family = AF_INET;
+        server.sin_port = htons(PORT);
+        inet_pton(AF_INET, "127.0.0.1", &server.sin_addr);
 
-    int status, balance;
-    read(sock, &status, sizeof(status));
+        connect(sock, (struct sockaddr *)&server, sizeof(server));
 
-    if (status == 0) {
+        write(sock, &req, sizeof(req));
+
+        int status, balance;
+
+        read(sock, &status, sizeof(status));
         read(sock, &balance, sizeof(balance));
-        printf("Current Balance: %d\n", balance);
-    } else {
-        printf("User not found\n");
-    }
 
-    close(sock);
+        if (status == STATUS_OK) {
+            printf("Transaction successful.\n");
+            printf("Current Balance: %d\n", balance);
+        }
+        else if (status == STATUS_INSUFFICIENT_FUNDS) {
+            printf("Transaction failed: Insufficient funds.\n");
+            printf("Current Balance: %d\n", balance);
+        }
+        else {
+            printf("Unknown error.\n");
+        }
+
+                close(sock);
+            }
+
+             
     return 0;
 }

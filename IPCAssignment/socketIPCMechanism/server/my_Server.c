@@ -10,6 +10,10 @@
 #define QUEUE_SIZE 10
 #define DB_FILE "../resource/accountDB.txt"
 
+#define STATUS_OK                 0
+#define STATUS_INSUFFICIENT_FUNDS 1
+
+
 typedef enum {
     OP_WITHDRAW = 1,
     OP_DEPOSIT,
@@ -63,19 +67,19 @@ int queue_pop(task_queue *tq) {
     return fd;
 }
 
-/* ---------- DB OPERATION ---------- */
-
 int process_request(Request *req, int *result) {
     FILE *fp;
     int id, balance;
     int found = 0;
+    int status = STATUS_OK;
 
     pthread_mutex_lock(&db_mutex);
 
-    fp = fopen(DB_FILE, "r+");
+    fp = fopen(DB_FILE, "r");
     if (!fp) {
-        pthread_mutex_unlock(&db_mutex);
-        return -1;
+        fp = fopen(DB_FILE, "w");
+        fclose(fp);
+        fp = fopen(DB_FILE, "r");
     }
 
     FILE *temp = fopen("temp.txt", "w");
@@ -84,11 +88,16 @@ int process_request(Request *req, int *result) {
         if (id == req->userId) {
             found = 1;
 
-            if (req->op == OP_WITHDRAW) {
-                if (balance >= req->amount)
-                    balance -= req->amount;
-            } else if (req->op == OP_DEPOSIT) {
+            if (req->op == OP_DEPOSIT) {
                 balance += req->amount;
+            }
+            else if (req->op == OP_WITHDRAW) {
+                if (req->amount > balance) {
+                    status = STATUS_INSUFFICIENT_FUNDS;
+                    /* balance unchanged */
+                } else {
+                    balance -= req->amount;
+                }
             }
 
             *result = balance;
@@ -96,13 +105,27 @@ int process_request(Request *req, int *result) {
         fprintf(temp, "%d %d\n", id, balance);
     }
 
+    /* New account case */
+    if (!found) {
+        int new_balance = 0;
+
+        if (req->op == OP_DEPOSIT) {
+            new_balance = req->amount;
+        }
+        else if (req->op == OP_WITHDRAW) {
+            status = STATUS_INSUFFICIENT_FUNDS;
+        }
+
+        fprintf(temp, "%d %d\n", req->userId, new_balance);
+        *result = new_balance;
+    }
+
     fclose(fp);
     fclose(temp);
-
     rename("temp.txt", DB_FILE);
 
     pthread_mutex_unlock(&db_mutex);
-    return found ? 0 : -1;
+    return status;
 }
 
 /* ---------- Worker Thread ---------- */
@@ -112,19 +135,21 @@ void *worker(void *arg) {
 
     while (1) {
         int client_fd = queue_pop(&tq);
+
         Request req;
         int balance = 0;
 
         read(client_fd, &req, sizeof(req));
+
         int status = process_request(&req, &balance);
 
         write(client_fd, &status, sizeof(status));
-        if (status == 0)
-            write(client_fd, &balance, sizeof(balance));
+        write(client_fd, &balance, sizeof(balance));
 
         close(client_fd);
     }
 }
+
 
 /* ---------- Main ---------- */
 
